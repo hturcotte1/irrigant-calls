@@ -181,7 +181,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function CallItem({ call }: { call: Call }) {
   const analysis = (call.analysis ?? {}) as Record<string, unknown>;
-  const learned = ["crops", "acres", "irrigation", "location", "tools_and_data", "advisor", "list_corrections", "questions_for_henry"]
+  const learned = ["decision_maker", "crops", "acres", "irrigation", "location", "tools_and_data", "advisor", "list_corrections", "questions_for_henry"]
     .map((k) => [k, analysis[k]] as const)
     .filter(([, v]) => typeof v === "string" && v.trim());
   return (
