@@ -7,6 +7,7 @@ import { getStore } from "@/lib/store";
 export const dynamic = "force-dynamic";
 
 const HANDLED = new Set(["call_started", "call_ended", "call_analyzed"]);
+const TEST_CALL_NOTE = "Test call from the Script page";
 
 // Retell posts call_started, call_ended and call_analyzed here. Events can repeat
 // or arrive out of order, so every write is idempotent and nothing settled is undone.
@@ -28,9 +29,12 @@ export async function POST(request: Request) {
   const inbound = event.call.direction === "inbound";
   const fields = callFields(event);
 
+  // Test calls from the Script page ring Henry's phone: keep the record, never touch a farmer.
+  const isTest = event.call.metadata?.test === "1";
+
   let call = await store.getCallByRetellId(event.call.call_id);
   let contactId = call?.contact_id ?? null;
-  if (!contactId) {
+  if (!contactId && !isTest) {
     const fromMetadata = event.call.metadata?.contact_id;
     if (typeof fromMetadata === "string") contactId = fromMetadata;
     else if (inbound && event.call.from_number) contactId = (await store.findContactByPhone(event.call.from_number))?.id ?? null;
@@ -38,7 +42,10 @@ export async function POST(request: Request) {
 
   if (!call) {
     try {
-      call = await store.insertCall({ ...fields, contact_id: contactId, kind: inbound ? "inbound" : "ai", direction: inbound ? "inbound" : "outbound" });
+      call = await store.insertCall({
+        ...fields, contact_id: contactId, kind: inbound ? "inbound" : "ai", direction: inbound ? "inbound" : "outbound",
+        ...(isTest ? { notes: TEST_CALL_NOTE } : {}),
+      });
     } catch (error) {
       // Two events for a new call can arrive together; the loser updates what the winner created.
       call = await store.getCallByRetellId(event.call.call_id);

@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, Settings } from "@/lib/types";
+import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, NewScriptVersion, ScriptVersion, Settings } from "@/lib/types";
 import { PAGE_SIZE, type CallWithContact, type Facets, type Store } from "./types";
 
 // List views skip the big `raw` column.
@@ -196,5 +196,23 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.rpc("ai_queue_size");
     if (error) fail("Counting the queue", error);
     return Number(data ?? 0);
+  }
+
+  async listScriptVersions(limit: number) {
+    const { data, error } = await this.db.from("script_versions").select("*").order("created_at", { ascending: false }).limit(limit);
+    if (error) fail("Loading script history", error);
+    return (data ?? []) as ScriptVersion[];
+  }
+
+  async getScriptVersion(id: string) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
+    const { data, error } = await this.db.from("script_versions").select("*").eq("id", id).maybeSingle();
+    if (error) fail("Loading script version", error);
+    return data as ScriptVersion | null;
+  }
+
+  async insertScriptVersion(v: NewScriptVersion) {
+    const { error } = await this.db.from("script_versions").insert(v);
+    if (error) fail("Saving script history", error);
   }
 }

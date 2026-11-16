@@ -1,4 +1,4 @@
-import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, Settings } from "@/lib/types";
+import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, NewScriptVersion, ScriptVersion, Settings } from "@/lib/types";
 
 export const PAGE_SIZE = 50;
 
@@ -33,4 +33,8 @@ export interface Store {
   aiCallsSince(isoTime: string): Promise<number>;
   aiQueuePreview(limit: number): Promise<Contact[]>;
   aiQueueSize(): Promise<number>;
+
+  listScriptVersions(limit: number): Promise<ScriptVersion[]>;
+  getScriptVersion(id: string): Promise<ScriptVersion | null>;
+  insertScriptVersion(v: NewScriptVersion): Promise<void>;
 }

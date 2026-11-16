@@ -135,11 +135,11 @@ export default async function AiPage({ searchParams }: PageProps<"/ai">) {
                   {recent.map((call) => (
                     <tr key={call.id} className="align-top">
                       <td className="py-2 pr-3 whitespace-nowrap text-stone-600">{shortDate(call.started_at ?? call.created_at, true)}</td>
-                      <td className="py-2 pr-3">{call.contact ? <Link href={`/contacts/${call.contact.id}`} className="font-medium text-stone-900 hover:underline">{call.contact.farm}</Link> : <span className="text-stone-500">Not on the list</span>}</td>
+                      <td className="py-2 pr-3">{call.contact ? <Link href={`/contacts/${call.contact.id}`} className="font-medium text-stone-900 hover:underline">{call.contact.farm}</Link> : <span className="text-stone-500">{call.notes?.startsWith("Test call") ? "Test call" : "Not on the list"}</span>}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         {call.status === "error" ? <Badge tone="bad">Didn&apos;t go out</Badge> : call.status === "uncertain" ? <Badge tone="bad">Unclear</Badge> : call.outcome ? <Badge tone={call.outcome === "wants_call_with_henry" ? "good" : "neutral"}>{OUTCOME_TEXT[call.outcome] ?? call.outcome}</Badge> : <span className="text-stone-500">{call.status === "registered" || call.status === "ongoing" ? "In progress" : call.disconnection_reason?.replace(/_/g, " ") ?? ""}</span>}
                       </td>
-                      <td className="py-2 text-stone-700">{call.summary ?? call.notes ?? ""}</td>
+                      <td className="py-2 text-stone-700">{call.summary || call.notes || ""}</td>
                     </tr>
                   ))}
                 </tbody>

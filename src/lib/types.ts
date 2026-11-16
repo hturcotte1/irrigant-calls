@@ -102,8 +102,22 @@ export type Settings = {
   call_days: number[];
   max_attempts: number;
   retry_gap_hours: number;
+  test_phone: string | null;
   updated_at: string;
 };
+
+/** One saved version of everything the AI says. Callback fields are blank in versions saved before they existed. */
+export type ScriptVersion = {
+  id: string;
+  prompt: string;
+  voicemail: string | null;
+  callback_greeting: string | null;
+  callback_prompt: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type NewScriptVersion = Omit<ScriptVersion, "id" | "created_at">;
 
 export type ContactFilters = {
   q?: string;
@@ -137,3 +151,6 @@ export type ContactPatch = Partial<
 >;
 
 export type NewCall = Partial<Omit<Call, "id" | "created_at">> & Pick<Call, "kind" | "direction">;
+
+/** What the script editor gets back when a save doesn't go through: why, and everything typed, so nothing is lost. */
+export type ScriptFormState = { error: string | null; notice: string | null; values: Record<string, string> | null; at: number };

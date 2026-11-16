@@ -1,5 +1,5 @@
 import "server-only";
-import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, Settings } from "@/lib/types";
+import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, NewScriptVersion, ScriptVersion, Settings } from "@/lib/types";
 import { DIALABLE } from "@/lib/status";
 import { PAGE_SIZE, type CallWithContact, type Facets, type Store } from "./types";
 
@@ -24,7 +24,7 @@ const FARMS = [
 const STATUSES: Contact["status"][] = ["not_called", "not_called", "not_called", "no_answer", "voicemail", "follow_up", "meeting", "spoke", "not_interested", "not_called", "follow_up", "dnc"];
 const TZ: Record<string, string> = { Mountain: "America/Denver", Pacific: "America/Los_Angeles", Central: "America/Chicago", Eastern: "America/New_York" };
 
-function seed(): { contacts: Contact[]; calls: Call[]; settings: Settings } {
+function seed(): { contacts: Contact[]; calls: Call[]; settings: Settings; scripts: ScriptVersion[] } {
   const now = Date.now();
   const contacts: Contact[] = [];
   for (let i = 0; i < 48; i++) {
@@ -74,8 +74,8 @@ function seed(): { contacts: Contact[]; calls: Call[]; settings: Settings } {
     interest_level: null, preferred_times: null, summary: "Caller returned a missed call.", transcript: null, recording_url: null,
     analysis: null, notes: null, handled: false, created_at: new Date(now - 40 * 60_000).toISOString(),
   });
-  const settings: Settings = { id: 1, ai_enabled: false, daily_cap: 50, calls_per_run: 1, call_start_hour: 10, call_end_hour: 19, call_days: [1, 2, 3, 4, 5], max_attempts: 3, retry_gap_hours: 48, updated_at: new Date(now).toISOString() };
-  return { contacts, calls, settings };
+  const settings: Settings = { id: 1, ai_enabled: false, daily_cap: 50, calls_per_run: 1, call_start_hour: 10, call_end_hour: 19, call_days: [1, 2, 3, 4, 5], max_attempts: 3, retry_gap_hours: 48, test_phone: "+12085550199", updated_at: new Date(now).toISOString() };
+  return { contacts, calls, settings, scripts: [] };
 }
 
 const state = (globalThis as unknown as { __demoStore?: ReturnType<typeof seed> }).__demoStore ??= seed();
@@ -140,4 +140,9 @@ export class DemoStore implements Store {
   async aiCallsSince(isoTime: string) { return state.calls.filter((c) => c.kind === "ai" && c.created_at >= isoTime).length; }
   async aiQueuePreview(limit: number) { return state.contacts.filter(dialable).sort(sortContacts).slice(0, limit); }
   async aiQueueSize() { return state.contacts.filter(dialable).length; }
+  async listScriptVersions(limit: number) { return state.scripts.slice(0, limit); }
+  async getScriptVersion(id: string) { return state.scripts.find((v) => v.id === id) ?? null; }
+  async insertScriptVersion(v: NewScriptVersion) {
+    state.scripts.unshift({ id: `v-${Date.now()}-${state.scripts.length}`, created_at: new Date().toISOString(), ...v });
+  }
 }

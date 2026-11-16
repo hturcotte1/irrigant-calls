@@ -8,6 +8,9 @@ phones farmers in Henry's cloned voice through Retell.
 - **To follow up**: people who called (208) 928-3200 back, farmers who asked for a call, and meetings.
 - **AI caller**: an on/off switch, daily limit, calling hours (in each farmer's own time zone),
   who's up next, and every AI call with its summary, transcript and recording.
+- **Script**: everything the AI says, editable: every section of the call script (rename, remove, add, or
+  edit it all as one block of text), the voicemail, and what callers hear when they ring back. Changes
+  go live on the next call; every save is kept and can be restored; "Call me to test" rings your own phone.
 - **Export CSV**: the call sheet back out, same 33 columns, with the results columns filled in.
 
 ## How it fits together
@@ -27,6 +30,10 @@ Next.js app <-- Retell webhook        scheduler -> /api/cron/dial -> Retell plac
   than missing them.
 - Retell webhooks are verified with the signing key, may repeat or arrive out of order, and never
   undo something already settled (a do-not-call always sticks).
+- The Script page reads and writes the agents in Retell directly (the callback agent is found from the
+  phone number), and keeps each version in `script_versions`. If the script was changed in Retell
+  itself, that version is saved to the history before it's replaced. Whatever is edited, an honesty
+  block is added at the end: asked whether it's a person or Henry, the agent says it's his assistant.
 
 ## Where it runs
 
