@@ -7,6 +7,8 @@ export const env = {
   retellApiKey: process.env.RETELL_API_KEY ?? "",
   retellWebhookKey: process.env.RETELL_WEBHOOK_KEY || process.env.RETELL_API_KEY || "",
   retellAgentId: process.env.RETELL_AGENT_ID ?? "",
+  // A separate agent for Henry's own tests, edited without the honesty rules. Only testCall uses it.
+  retellTestAgentId: process.env.RETELL_TEST_AGENT_ID ?? "",
   fromNumber: process.env.RETELL_FROM_NUMBER || "+12089283200",
   dashboardPassword: process.env.DASHBOARD_PASSWORD ?? "",
   sessionSecret: process.env.SESSION_SECRET ?? "",

@@ -20,6 +20,9 @@ Irrigant's outreach dashboard (Next.js 16 + Supabase + Retell). See README.md fo
 - The agent must never claim to be Henry or a human on real calls. Henry can edit every word of the script
   on the Script page, so `src/lib/script.ts` enforces this: every saved script ends with the honesty block
   (`FOOTER_*`), and `honestyProblem` refuses plain instructions to pass as Henry or a person. Keep both.
+  The only script without them is the test agent's (`RETELL_TEST_AGENT_ID`, the Script page's Test tab),
+  so Henry can hear any version on his own phone. Only `testCall` uses that agent. Never use it in the
+  dialer, attach it to the phone number, or let it ring anyone but the test phone.
 
 ## Commands
 

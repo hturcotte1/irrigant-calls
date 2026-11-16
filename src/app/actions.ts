@@ -7,7 +7,7 @@ import { prettyPhone } from "@/components/ui";
 import { callVariables } from "@/lib/call-vars";
 import { runDialer } from "@/lib/dialer";
 import { env } from "@/lib/env";
-import { getAgentScript, placeCall, saveAgentScript, type AgentScript, type LiveScript } from "@/lib/retell-api";
+import { getAgentScript, getTestAgentScript, placeCall, saveAgentScript, saveTestAgentScript, type AgentScript, type LiveScript, type TestScript } from "@/lib/retell-api";
 import { buildSections, editableSections, editableText, finalScript, honestyProblem, serializeScript, type ScriptSection, type SectionInput } from "@/lib/script";
 import { SESSION_COOKIE, SESSION_DAYS, isValidSessionToken, makeSessionToken, passwordMatches } from "@/lib/session";
 import { MANUAL_OUTCOMES, STATUS_LABEL, isStatus } from "@/lib/status";
@@ -273,19 +273,22 @@ export async function restoreScriptVersion(form: FormData) {
 }
 
 /**
- * Ring Henry's own phone with the outreach agent and the script as saved. This is the
- * one place besides the dialer that places a call, and it only ever rings the test
- * number in settings, never anyone on the call list.
+ * Ring Henry's own phone with the saved script: the live agent, or the test agent when
+ * `which` is "test". This is the one place besides the dialer that places a call, and it
+ * only ever rings the test number in settings, never anyone on the call list.
  */
 export async function testCall(form: FormData) {
   await requireSession();
+  const useTest = text(form, "which", 10) === "test";
+  const back = (params: Record<string, string>) => goScript(useTest ? { view: "test", ...params } : params);
   const store = getStore();
   const { test_phone: to } = await store.getSettings();
-  if (!to) return goScript({ test: "Add your phone number first.", tone: "bad" });
+  if (!to) return back({ test: "Add your phone number first.", tone: "bad" });
   const owner = await store.findContactByPhone(to);
   if (owner && !isTestContact(owner)) {
-    return goScript({ test: `Not called: ${prettyPhone(to)} is the number for ${owner.farm} on your call list. Test calls only go to your own phone.`, tone: "bad" });
+    return back({ test: `Not called: ${prettyPhone(to)} is the number for ${owner.farm} on your call list. Test calls only go to your own phone.`, tone: "bad" });
   }
+  if (useTest && !env.demo && !env.retellTestAgentId) return back({ test: "The test agent isn't set up (RETELL_TEST_AGENT_ID).", tone: "bad" });
 
   // Whose details the agent gets: a farmer from the list if asked, else the test contact.
   let pretend: Contact | null = owner;
@@ -293,25 +296,74 @@ export async function testCall(form: FormData) {
   if (as) {
     const match = (await store.listContacts({ q: as })).rows[0];
     pretend = match ? await store.getContact(match.id) : null;
-    if (!pretend) return goScript({ test: `Nobody on the list matches “${as}”.`, tone: "bad" });
+    if (!pretend) return back({ test: `Nobody on the list matches “${as}”.`, tone: "bad" });
   }
-  if (env.demo) return goScript({ test: "Demo mode: no call was placed.", tone: "info" });
+  if (env.demo) return back({ test: "Demo mode: no call was placed.", tone: "info" });
 
   // No contact_id in the metadata: a test call is never logged against a farmer.
-  const result = await placeCall({ to, variables: pretend ? callVariables(pretend) : SAMPLE_VARIABLES, metadata: { test: "1" } });
-  if (result.kind !== "placed") return goScript({ test: `The test call didn't go out: ${result.error}`, tone: "bad" });
+  const result = await placeCall({
+    to,
+    variables: pretend ? callVariables(pretend) : SAMPLE_VARIABLES,
+    metadata: { test: "1" },
+    ...(useTest ? { agentId: env.retellTestAgentId } : {}),
+  });
+  if (result.kind !== "placed") return back({ test: `The test call didn't go out: ${result.error}`, tone: "bad" });
   const who = pretend && !isTestContact(pretend) ? ` as if you were ${pretend.contact_name || pretend.farm}` : "";
-  return goScript({ test: `Calling ${prettyPhone(to)} now${who}. Pick up to hear the script as it's saved.`, tone: "good" });
+  return back({ test: `Calling ${prettyPhone(to)} now with the ${useTest ? "test" : "live"} script${who}. Pick up to hear it.`, tone: "good" });
+}
+
+/**
+ * The test agent's script is saved exactly as typed, with no honesty block or check:
+ * it's only ever used by testCall, which only rings the test phone. The dialer and the
+ * phone number never use the test agent.
+ */
+export async function saveTestScript(_prev: ScriptFormState, form: FormData): Promise<ScriptFormState> {
+  await requireSession();
+  const values = formValues(form);
+  const fail = (error: string): ScriptFormState => ({ error, notice: null, values, at: Date.now() });
+  const prompt = multiline(values.prompt);
+  if (!prompt) return fail("The test script is empty, so nothing was saved.");
+  let test: TestScript | null;
+  try {
+    test = await getTestAgentScript();
+  } catch (e) {
+    return fail(`Couldn't reach Retell, so nothing was saved. ${errorText(e)}`);
+  }
+  if (!test) return fail("The test agent isn't set up (RETELL_TEST_AGENT_ID).");
+  if (prompt === test.prompt.trim()) return { error: null, notice: "Nothing changed, so there was nothing to save.", values, at: Date.now() };
+  try {
+    await saveTestAgentScript(test, prompt);
+  } catch (e) {
+    return fail(`Saving didn't finish. ${errorText(e)}`);
+  }
+  revalidatePath("/script");
+  return goScript({ view: "test", testsaved: "1" });
+}
+
+/** Replace the test script with the live one (without its honesty block), to edit from there. */
+export async function copyLiveToTest() {
+  await requireSession();
+  let error: string | null = null;
+  try {
+    const [live, test] = await Promise.all([getAgentScript(), getTestAgentScript()]);
+    if (!test) error = "The test agent isn't set up (RETELL_TEST_AGENT_ID).";
+    else await saveTestAgentScript(test, editableText(live.prompt));
+  } catch (e) {
+    error = errorText(e);
+  }
+  revalidatePath("/script");
+  return goScript(error ? { view: "test", error: `Copying didn't finish: ${error}` } : { view: "test", copied: "1" });
 }
 
 export async function saveTestPhone(form: FormData) {
   await requireSession();
+  const back = (params: Record<string, string>) => goScript(text(form, "view", 10) === "test" ? { view: "test", ...params } : params);
   const phone = toE164(text(form, "phone", 40));
-  if (!phone) return goScript({ test: "That doesn't look like a phone number.", tone: "bad" });
+  if (!phone) return back({ test: "That doesn't look like a phone number.", tone: "bad" });
   const store = getStore();
   const owner = await store.findContactByPhone(phone);
-  if (owner && !isTestContact(owner)) return goScript({ test: `That's the number for ${owner.farm} on your call list. Use your own phone for tests.`, tone: "bad" });
+  if (owner && !isTestContact(owner)) return back({ test: `That's the number for ${owner.farm} on your call list. Use your own phone for tests.`, tone: "bad" });
   await store.updateSettings({ test_phone: phone });
   revalidatePath("/script");
-  return goScript({ test: `Test calls will ring ${prettyPhone(phone)}.`, tone: "good" });
+  return back({ test: `Test calls will ring ${prettyPhone(phone)}.`, tone: "good" });
 }

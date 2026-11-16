@@ -103,11 +103,37 @@ export async function saveAgentScript(live: LiveScript, next: AgentScript): Prom
   return changed;
 }
 
-/** Ask Retell to place one outbound call from our number with the outreach agent. */
+/** The test agent's script: no honesty block, because it only ever rings Henry's own test phone. */
+export type TestScript = { prompt: string; llmId: string };
+
+const demoTest = ((globalThis as unknown as { __demoTest?: { prompt: string } }).__demoTest ??= {
+  prompt: "PRIVATE TEST VERSION. You are calling Henry, who built you and knows you're automated.\n\nYOUR FIRST LINE\nSay: \"Hi, this is Henry from Irrigant.\"",
+});
+
+export async function getTestAgentScript(): Promise<TestScript | null> {
+  if (env.demo) return { prompt: demoTest.prompt, llmId: "demo" };
+  if (!env.retellApiKey || !env.retellTestAgentId) return null;
+  const agent = await retell<RetellAgent>("GET", `get-agent/${env.retellTestAgentId}`);
+  const llmId = agent.response_engine?.llm_id;
+  if (!llmId) throw new Error("The test agent has no script to edit");
+  const llm = await retell<RetellLlm>("GET", `get-retell-llm/${llmId}`);
+  return { prompt: llm.general_prompt ?? "", llmId };
+}
+
+export async function saveTestAgentScript(test: TestScript, prompt: string): Promise<void> {
+  if (env.demo) {
+    demoTest.prompt = prompt;
+    return;
+  }
+  await retell("PATCH", `update-retell-llm/${test.llmId}`, { general_prompt: prompt });
+}
+
+/** Ask Retell to place one outbound call from our number, with the outreach agent unless told otherwise. */
 export async function placeCall(input: {
   to: string;
   variables: Record<string, string>;
   metadata: Record<string, string>;
+  agentId?: string;
 }): Promise<PlaceCallResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15_000);
@@ -118,7 +144,7 @@ export async function placeCall(input: {
       body: JSON.stringify({
         from_number: env.fromNumber,
         to_number: input.to,
-        override_agent_id: env.retellAgentId,
+        override_agent_id: input.agentId ?? env.retellAgentId,
         retell_llm_dynamic_variables: input.variables,
         metadata: input.metadata,
       }),

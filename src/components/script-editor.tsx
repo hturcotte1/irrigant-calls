@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { saveScript } from "@/app/actions";
+import { copyLiveToTest, saveScript, saveTestScript } from "@/app/actions";
 import { Card, Field, buttonStyles, inputStyles } from "@/components/ui";
 import { headingInput } from "@/lib/script";
 import type { ScriptFormState } from "@/lib/types";
@@ -39,18 +39,21 @@ const noEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
   if (e.key === "Enter") e.preventDefault();
 };
 
-export function ScriptEditor(props: Props) {
-  const [state, action] = useActionState(saveScript, INITIAL);
-  const [dirty, setDirty] = useState(false);
-  const form = useRef<HTMLFormElement>(null);
-
-  // Warn before closing the tab with unsaved edits.
+/** Warn before closing the tab with unsaved edits. */
+function useLeaveWarning(dirty: boolean) {
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+}
+
+export function ScriptEditor(props: Props) {
+  const [state, action] = useActionState(saveScript, INITIAL);
+  const [dirty, setDirty] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
+  useLeaveWarning(dirty);
 
   // Size every box to its text, again whenever the form is rebuilt.
   useEffect(() => {
@@ -180,7 +183,63 @@ export function ScriptEditor(props: Props) {
   );
 }
 
-function SaveBar({ state, dirty, saved }: { state: ScriptFormState; dirty: boolean; saved: string | null }) {
+/** The test agent's script, as one block of text. No honesty rules: it only ever rings Henry's test phone. */
+export function TestScriptEditor({ prompt, saved }: { prompt: string; saved: string | null }) {
+  const [state, action] = useActionState(saveTestScript, INITIAL);
+  const [dirty, setDirty] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
+  useLeaveWarning(dirty);
+  useEffect(() => {
+    form.current?.querySelectorAll("textarea").forEach(fit);
+  }, [state.at]);
+
+  return (
+    <form
+      ref={form}
+      key={state.at}
+      action={action}
+      onInput={(e) => {
+        setDirty(true);
+        if (e.target instanceof HTMLTextAreaElement) fit(e.target);
+      }}
+      className="space-y-4"
+    >
+      <Card>
+        <textarea
+          name="prompt"
+          aria-label="The test script"
+          defaultValue={state.values?.prompt ?? prompt}
+          rows={rowsFor(prompt, 20, 40)}
+          className={`${inputStyles} min-h-96 font-mono text-[13px] leading-relaxed`}
+        />
+        <p className="mt-2 text-xs text-stone-500">Fill-ins work the same as in the live script.</p>
+      </Card>
+      <SaveBar state={state} dirty={dirty} saved={saved} idle="Only ever rings your test phone." label="Save test script" />
+    </form>
+  );
+}
+
+/** Overwrites the test script, so it asks first. */
+export function CopyLiveButton() {
+  return (
+    <form
+      action={copyLiveToTest}
+      onSubmit={(e) => {
+        if (!window.confirm("Replace the test script with a copy of the live script?")) e.preventDefault();
+      }}
+    >
+      <button type="submit" className={buttonStyles.quiet}>Start from the live script</button>
+    </form>
+  );
+}
+
+function SaveBar({ state, dirty, saved, idle = "Changes go live on the next call.", label = "Save script" }: {
+  state: ScriptFormState;
+  dirty: boolean;
+  saved: string | null;
+  idle?: string;
+  label?: string;
+}) {
   const { pending } = useFormStatus();
   const [message, tone] = pending
     ? ["Saving to the AI caller…", "text-stone-600"]
@@ -192,7 +251,7 @@ function SaveBar({ state, dirty, saved }: { state: ScriptFormState; dirty: boole
           ? ["You have unsaved changes.", "font-medium text-amber-800"]
           : saved
             ? [saved, "font-medium text-field-700"]
-            : ["Changes go live on the next call.", "text-stone-600"];
+            : [idle, "text-stone-600"];
   return (
     <div className="sticky bottom-0 z-10 -mx-4 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_-6px_rgba(0,0,0,0.12)] backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
       <div className="flex items-center justify-between gap-3">
@@ -200,7 +259,7 @@ function SaveBar({ state, dirty, saved }: { state: ScriptFormState; dirty: boole
           {message}
         </p>
         <button type="submit" disabled={pending} className={`${buttonStyles.primary} shrink-0`}>
-          {pending ? "Saving…" : "Save script"}
+          {pending ? "Saving…" : label}
         </button>
       </div>
     </div>

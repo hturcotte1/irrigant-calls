@@ -11,6 +11,8 @@ phones farmers in Henry's cloned voice through Retell.
 - **Script**: everything the AI says, editable: every section of the call script (rename, remove, add, or
   edit it all as one block of text), the voicemail, and what callers hear when they ring back. Changes
   go live on the next call; every save is kept and can be restored; "Call me to test" rings your own phone.
+  The **Test script** tab edits a separate test-only agent with no honesty rules (it can say it's Henry);
+  the AI caller never uses it, and it only ever rings the test phone.
 - **Export CSV**: the call sheet back out, same 33 columns, with the results columns filled in.
 
 ## How it fits together
