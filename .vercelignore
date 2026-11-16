@@ -1,0 +1,6 @@
+node_modules
+.next
+.git
+*.csv
+.env*
+!.env.example

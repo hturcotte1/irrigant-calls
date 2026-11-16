@@ -28,16 +28,19 @@ Next.js app <-- Retell webhook        scheduler -> /api/cron/dial -> Retell plac
 - Retell webhooks are verified with the signing key, may repeat or arrive out of order, and never
   undo something already settled (a do-not-call always sticks).
 
-## Setup
+## Where it runs
 
-1. **Database**: the tables are in `supabase/migrations/`. They're already applied to the
-   `irrigant-calls` Supabase project and the call sheet is imported (3,019 contacts).
-2. **Vercel**: import this repo, then add the environment variables from `.env.example`.
-3. **Scheduler**: follow `supabase/scheduler.sql` (works on any Vercel plan).
-4. **Retell**: point the outbound and inbound agents' webhook at
-   `https://YOUR-APP.vercel.app/api/retell/webhook`.
-5. Open the dashboard, check the Setup card on the **AI caller** page, and turn it on when ready.
-   It's off until you do.
+- **App**: https://irrigant-calls.vercel.app (Vercel project `irrigant-calls`, team HT). Environment
+  variables are set in Vercel (names in `.env.example`); `RETELL_API_KEY` must be the Retell key with
+  the webhook badge, because Retell signs webhooks with it.
+- **Deploys**: until the Vercel account is connected to GitHub, deploy from a checkout with
+  `npx vercel deploy --prod`. Once it's connected (`vercel git connect`), every push to `main` deploys.
+- **Database**: Supabase project `irrigant-calls`; tables in `supabase/migrations/`, call sheet imported.
+- **Scheduler**: Supabase `pg_cron` job `irrigant-dial` calls `/api/cron/dial` every 5 minutes
+  (`supabase/scheduler.sql`); its bearer secret lives in Supabase Vault as `cron_secret` and must match
+  `CRON_SECRET` in Vercel.
+- **Retell**: the outbound, inbound and test agents post to `/api/retell/webhook`.
+- The AI caller is off until it's turned on from the **AI caller** page.
 
 ## Development
 
