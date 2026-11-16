@@ -97,9 +97,9 @@ export function contactUpdateForAiCall(e: RetellEvent, contact: Pick<Contact, "s
     case "do_not_call":
       return dnc("Asked not to be called again (AI call)");
     case "someone_else_answered":
-      // Family or staff picked up, so the number is right: the AI tries again later,
-      // unless they said when to reach the person, which goes to Henry's follow-up list.
-      return times ? followUp("Someone else answered and said when to call", times) : { status: "no_answer", outcome: "Someone else answered (AI call)" };
+      // Family or staff picked up and heard the short overview with our number. Anyone at the farm
+      // counts, so the AI doesn't call again. If they said when to reach the person, Henry follows up.
+      return times ? followUp("Someone else answered and said when to call", times) : { status: "spoke", outcome: "Someone else at the farm heard about Helios (AI call)" };
     case "wrong_person":
       return { status: "wrong_number", outcome: "Wrong person (AI call)" };
     default: {

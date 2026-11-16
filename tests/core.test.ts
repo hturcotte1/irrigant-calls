@@ -118,8 +118,8 @@ test("what the agent is told: farm name only when it isn't the person's own name
   assert.doesNotMatch(v.known_context, /Verified: official directory/);
 });
 
-test("someone else answering isn't a wrong number: the AI tries again, or Henry follows up if they said when", () => {
-  assert.deepEqual(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered" }), contact()), { status: "no_answer", outcome: "Someone else answered (AI call)" });
+test("someone else answering isn't a wrong number: they heard about Helios, or Henry follows up if they said when", () => {
+  assert.deepEqual(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered" }), contact()), { status: "spoke", outcome: "Someone else at the farm heard about Helios (AI call)" });
   assert.deepEqual(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered", preferred_times: "after 2pm" }), contact()), {
     status: "follow_up", outcome: "Someone else answered and said when to call", follow_up_note: "after 2pm",
   });
