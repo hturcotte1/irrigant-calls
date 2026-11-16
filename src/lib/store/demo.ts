@@ -1,5 +1,6 @@
 import "server-only";
 import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, NewScriptVersion, ScriptVersion, Settings } from "@/lib/types";
+import { TEST_CALL_NOTE } from "@/lib/retell-map";
 import { DIALABLE } from "@/lib/status";
 import { PAGE_SIZE, type CallWithContact, type Facets, type Store } from "./types";
 
@@ -137,7 +138,7 @@ export class DemoStore implements Store {
   async updateSettings(patch: Partial<Settings>) { Object.assign(state.settings, patch, { updated_at: new Date().toISOString() }); return state.settings; }
   async claimContactsForAi() { return []; } // the demo never places calls
   async releaseClaim() {}
-  async aiCallsSince(isoTime: string) { return state.calls.filter((c) => c.kind === "ai" && c.created_at >= isoTime).length; }
+  async aiCallsSince(isoTime: string) { return state.calls.filter((c) => c.kind === "ai" && c.notes !== TEST_CALL_NOTE && c.created_at >= isoTime).length; }
   async aiQueuePreview(limit: number) { return state.contacts.filter(dialable).sort(sortContacts).slice(0, limit); }
   async aiQueueSize() { return state.contacts.filter(dialable).length; }
   async listScriptVersions(limit: number) { return state.scripts.slice(0, limit); }

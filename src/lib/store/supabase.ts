@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Call, CallKind, Contact, ContactFilters, ContactPatch, NewCall, NewScriptVersion, ScriptVersion, Settings } from "@/lib/types";
+import { TEST_CALL_NOTE } from "@/lib/retell-map";
 import { PAGE_SIZE, type CallWithContact, type Facets, type Store } from "./types";
 
 // List views skip the big `raw` column.
@@ -181,7 +182,13 @@ export class SupabaseStore implements Store {
   }
 
   async aiCallsSince(isoTime: string) {
-    const { count, error } = await this.db.from("calls").select("id", { count: "exact", head: true }).eq("kind", "ai").gte("created_at", isoTime);
+    // Farmer calls only: test calls ring Henry's phone and don't use up the daily limit.
+    const { count, error } = await this.db
+      .from("calls")
+      .select("id", { count: "exact", head: true })
+      .eq("kind", "ai")
+      .gte("created_at", isoTime)
+      .or(`notes.is.null,notes.neq."${TEST_CALL_NOTE}"`);
     if (error) fail("Counting today's calls", error);
     return count ?? 0;
   }

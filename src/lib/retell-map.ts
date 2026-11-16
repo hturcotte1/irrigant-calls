@@ -30,6 +30,9 @@ export type RetellCall = {
 
 export type RetellEvent = { event: string; call: RetellCall };
 
+/** The note on calls placed from the Script page's test buttons. They ring Henry's phone, never a farmer. */
+export const TEST_CALL_NOTE = "Test call from the Script page";
+
 const iso = (ms?: number) => (typeof ms === "number" && ms > 0 ? new Date(ms).toISOString() : null);
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { verifyRetellSignature } from "@/lib/retell-signature";
-import { callFields, contactUpdateForAiCall, contactUpdateForInbound, type RetellEvent } from "@/lib/retell-map";
+import { TEST_CALL_NOTE, callFields, contactUpdateForAiCall, contactUpdateForInbound, type RetellEvent } from "@/lib/retell-map";
 import { getStore } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 const HANDLED = new Set(["call_started", "call_ended", "call_analyzed"]);
-const TEST_CALL_NOTE = "Test call from the Script page";
 
 // Retell posts call_started, call_ended and call_analyzed here. Events can repeat
 // or arrive out of order, so every write is idempotent and nothing settled is undone.
