@@ -82,7 +82,7 @@ export default async function ScriptPage({ searchParams }: PageProps<"/script">)
     <>
       <PageHeader
         title="Script"
-        sub={testTab ? "Your private test script. Try anything here: it only ever rings your own phone." : "Everything the AI caller says, in your voice. Edit any of it; changes go live on the next call."}
+        sub={testTab ? "Your private test script. Try anything here: it only ever rings your own phone." : "Everything the AI caller says. Edit any of it; changes go live on the next call."}
         action={
           <form action={testCall} className="lg:hidden">
             <input type="hidden" name="which" value={which} />

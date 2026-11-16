@@ -1,7 +1,7 @@
 # Irrigant Calls
 
 Irrigant's outreach dashboard: the call list, follow-ups, and the AI caller that
-phones farmers in Henry's cloned voice through Retell.
+phones farmers through Retell (voice: ElevenLabs "Nico" on Eleven v4 Turbo).
 
 - **Call list**: every farm from the call sheet, Tier A first, filterable by tier, type, state and status.
   Tap a number to call from your phone, then log how it went in one tap.

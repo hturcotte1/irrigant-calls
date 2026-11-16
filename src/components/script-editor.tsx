@@ -150,7 +150,7 @@ export function ScriptEditor(props: Props) {
       )}
 
       <Card title="Voicemail">
-        <p className="mb-2 text-sm text-stone-600">Read out in your voice when a call goes to voicemail. Fill-ins work here too.</p>
+        <p className="mb-2 text-sm text-stone-600">Read out when a call goes to voicemail. Fill-ins work here too.</p>
         <textarea name="voicemail" aria-label="Voicemail" required defaultValue={value("voicemail", props.voicemail)} rows={rowsFor(props.voicemail, 3, 8)} className={textArea} />
       </Card>
 

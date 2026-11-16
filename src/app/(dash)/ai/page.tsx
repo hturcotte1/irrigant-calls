@@ -28,7 +28,7 @@ export default async function AiPage({ searchParams }: PageProps<"/ai">) {
 
   return (
     <>
-      <PageHeader title="AI caller" sub="Calls farmers in your cloned voice, during their own calling hours, Tier A first. It never calls anyone marked do not call, anyone already reached, or the numbers you call yourself." />
+      <PageHeader title="AI caller" sub="Calls farmers during their own calling hours, Tier A first. It never calls anyone marked do not call, anyone already reached, or the numbers you call yourself." />
 
       <div className="space-y-5">
         {sp.saved === "1" ? <Notice tone="good">Settings saved.</Notice> : null}
