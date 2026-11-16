@@ -33,8 +33,12 @@ export function spokenFarm(c: Pick<Contact, "farm" | "contact_name">): string {
   const farm = clean(c.farm);
   if (!farm || farm === "(no farm name)") return "";
   if (c.contact_name && same(farm, clean(c.contact_name))) return "";
-  return farm.replace(/\s*\(.*?\)\s*$/, ""); // "Heglar Creek Farms (Heglar Creek Dairy LLC)" -> "Heglar Creek Farms"
+  // "Heglar Creek Farms (Heglar Creek Dairy LLC)" -> "Heglar Creek Farms"; "Sunrise Organic Dairy, LLC" -> "Sunrise Organic Dairy".
+  // Nobody says "LLC" out loud.
+  return farm.replace(/\s*\(.*?\)\s*$/, "").replace(LEGAL_ENDING, "").trim();
 }
+
+const LEGAL_ENDING = /[\s,]+(?:L\.?L\.?C\.?|P\.?L\.?L\.?C\.?|L\.?L\.?L\.?P\.?|L\.?L\.?P\.?|L\.?P\.?|Inc\.?|Incorporated|Corp\.?|Corporation|Ltd\.?|Limited)$/i;
 
 /** Facts from the sheet the agent may bring up, one at a time. Never internal sourcing notes. */
 export function knownContext(c: Contact, maxLength = 700): string {

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/contacts/[id]">):
 const KIND_LABEL: Record<Call["kind"], string> = { ai: "AI call", manual: "You", inbound: "Called us" };
 const OUTCOME_TEXT: Record<string, string> = {
   wants_call_with_henry: "Wants a call with Henry", follow_up_later: "Follow up later", callback_requested: "Wants a call back",
-  not_interested: "Not interested", do_not_call: "Do not call", wrong_person: "Wrong person", no_conversation: "No conversation",
+  not_interested: "Not interested", do_not_call: "Do not call", wrong_person: "Wrong person", someone_else_answered: "Someone else answered", no_conversation: "No conversation",
   spoke: "Spoke", follow_up: "Follow up", meeting: "Meeting set", voicemail: "Voicemail", no_answer: "No answer", wrong_number: "Wrong number", dnc: "Do not call",
 };
 

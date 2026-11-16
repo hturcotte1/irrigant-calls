@@ -106,6 +106,9 @@ test("the Boise day starts at local midnight", () => {
 test("what the agent is told: farm name only when it isn't the person's own name, places said in full", () => {
   assert.equal(spokenFarm({ farm: "John Carroll", contact_name: "John Carroll" }), "");
   assert.equal(spokenFarm({ farm: "Heglar Creek Farms (Heglar Creek Dairy LLC)", contact_name: "Pat" }), "Heglar Creek Farms");
+  assert.equal(spokenFarm({ farm: "Sunrise Organic Dairy, LLC", contact_name: "Pat" }), "Sunrise Organic Dairy");
+  assert.equal(spokenFarm({ farm: "Valley Growers Inc.", contact_name: "Pat" }), "Valley Growers");
+  assert.equal(spokenFarm({ farm: "Farms Unlimited", contact_name: "Pat" }), "Farms Unlimited");
   assert.equal(spokenLocation({ city: "Kuna", county: "Ada", state: "ID" }), "Kuna, Idaho");
   assert.equal(spokenLocation({ city: null, county: "Humboldt", state: "CA" }), "Humboldt County, California");
   const v = callVariables(contact());
@@ -113,4 +116,12 @@ test("what the agent is told: farm name only when it isn't the person's own name
   assert.equal(v.farm_name, "Lakeview Farms");
   assert.match(v.known_context, /potatoes, sugar beets/);
   assert.doesNotMatch(v.known_context, /Verified: official directory/);
+});
+
+test("someone else answering isn't a wrong number: the AI tries again, or Henry follows up if they said when", () => {
+  assert.deepEqual(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered" }), contact()), { status: "no_answer", outcome: "Someone else answered (AI call)" });
+  assert.deepEqual(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered", preferred_times: "after 2pm" }), contact()), {
+    status: "follow_up", outcome: "Someone else answered and said when to call", follow_up_note: "after 2pm",
+  });
+  assert.equal(contactUpdateForAiCall(analyzed({ outcome: "someone_else_answered" }), contact({ status: "meeting" })), null);
 });

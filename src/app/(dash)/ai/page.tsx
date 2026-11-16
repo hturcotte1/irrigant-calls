@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "AI caller" };
 const DAYS = [[1, "Mon"], [2, "Tue"], [3, "Wed"], [4, "Thu"], [5, "Fri"], [6, "Sat"], [7, "Sun"]] as const;
 const OUTCOME_TEXT: Record<string, string> = {
   wants_call_with_henry: "Wants a call", follow_up_later: "Follow up later", not_interested: "Not interested",
-  do_not_call: "Do not call", wrong_person: "Wrong person", no_conversation: "No conversation", callback_requested: "Wants a call back",
+  do_not_call: "Do not call", wrong_person: "Wrong person", someone_else_answered: "Someone else answered", no_conversation: "No conversation", callback_requested: "Wants a call back",
 };
 
 export default async function AiPage({ searchParams }: PageProps<"/ai">) {
