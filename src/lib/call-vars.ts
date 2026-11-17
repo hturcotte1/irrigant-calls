@@ -35,7 +35,27 @@ export function spokenFarm(c: Pick<Contact, "farm" | "contact_name">): string {
   if (c.contact_name && same(farm, clean(c.contact_name))) return "";
   // "Heglar Creek Farms (Heglar Creek Dairy LLC)" -> "Heglar Creek Farms"; "Sunrise Organic Dairy, LLC" -> "Sunrise Organic Dairy".
   // Nobody says "LLC" out loud.
-  return farm.replace(/\s*\(.*?\)\s*$/, "").replace(LEGAL_ENDING, "").trim();
+  // "Menn Family Farm, LLC, also known as Harvey and Jackie Menn" -> "Menn Family Farm";
+  // "Joseph D. Mutschler DBA Mutschler Organic Farm" -> "Mutschler Organic Farm"; "Olsgaard, Inc, Harold" -> "Olsgaard".
+  // Several names ("A; B" or "A dba B dba C"): keep the first after choosing a side.
+  const name = tradeName(farm.replace(/\s*\(.*?\)\s*$/, "")).split(MORE_NAMES)[0];
+  return name.replace(LEGAL_MIDDLE, "").replace(LEGAL_ENDING, "").trim();
+}
+
+const ALIAS = /^(.*?)[\s,;]+(?:also known as|a\.?k\.?a\.?|d\/?b\/?a|doing business as)\s+(.+)$/i;
+const FARM_WORD = /\b(?:farms?|dair(?:y|ies)|ranch(?:es)?|orchards?|organics?|acres|cattle|land|ag|growers?|produce|seeds?|potato(?:es)?|gardens?|vineyards?|beef|hay|holsteins?|creek|valley|feed|livestock|company|co\.?|enterprises?)\b/i;
+const MORE_NAMES = /;|[\s,]+(?:also known as|a\.?k\.?a\.?|d\/?b\/?a|doing business as)\s+/i;
+const LEGAL_MIDDLE = /[\s,]+(?:L\.?L\.?C\.?|Inc\.?|Corp\.?|Ltd\.?|L\.?L\.?P\.?)[\s,]+.*$/i;
+
+/** "X dba Y" or "X aka Y": the side that reads like a farm, else the name they trade as (a DBA) or the first one. */
+function tradeName(name: string): string {
+  const m = ALIAS.exec(name);
+  if (!m) return name;
+  const [, first, second] = m;
+  const firstIsFarm = FARM_WORD.test(first);
+  const secondIsFarm = FARM_WORD.test(second);
+  if (firstIsFarm !== secondIsFarm) return firstIsFarm ? first : second;
+  return /\b(?:d\/?b\/?a|doing business as)\b/i.test(name) ? second : first;
 }
 
 const LEGAL_ENDING = /[\s,]+(?:L\.?L\.?C\.?|P\.?L\.?L\.?C\.?|L\.?L\.?L\.?P\.?|L\.?L\.?P\.?|L\.?P\.?|Inc\.?|Incorporated|Corp\.?|Corporation|Ltd\.?|Limited)$/i;

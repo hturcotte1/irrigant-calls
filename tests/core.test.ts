@@ -109,6 +109,14 @@ test("what the agent is told: farm name only when it isn't the person's own name
   assert.equal(spokenFarm({ farm: "Sunrise Organic Dairy, LLC", contact_name: "Pat" }), "Sunrise Organic Dairy");
   assert.equal(spokenFarm({ farm: "Valley Growers Inc.", contact_name: "Pat" }), "Valley Growers");
   assert.equal(spokenFarm({ farm: "Farms Unlimited", contact_name: "Pat" }), "Farms Unlimited");
+  assert.equal(spokenFarm({ farm: "Menn Family Farm, LLC, also known as Harvey and Jackie Menn", contact_name: "Pat" }), "Menn Family Farm");
+  assert.equal(spokenFarm({ farm: "Ridge Dairy LLC dba Ridge Milk Co", contact_name: "Pat" }), "Ridge Milk Co");
+  assert.equal(spokenFarm({ farm: "Joseph D. Mutschler DBA Mutschler Organic Farm", contact_name: "Pat" }), "Mutschler Organic Farm");
+  assert.equal(spokenFarm({ farm: "Sunshine Dairies dba Leonard & Jesse Martin", contact_name: "Pat" }), "Sunshine Dairies");
+  assert.equal(spokenFarm({ farm: "Blackstone Realty Investors, LLC dba Blackrock Farms, LLC", contact_name: "Pat" }), "Blackrock Farms");
+  assert.equal(spokenFarm({ farm: "Olsgaard, Inc, Harold", contact_name: "Pat" }), "Olsgaard");
+  assert.equal(spokenFarm({ farm: "Christopher Hoffner DBA Kerr Mill Holsteins; DBA Hoffner Organic Farm", contact_name: "Pat" }), "Kerr Mill Holsteins");
+  assert.equal(spokenFarm({ farm: "Dbaker Farms", contact_name: "Pat" }), "Dbaker Farms");
   assert.equal(spokenLocation({ city: "Kuna", county: "Ada", state: "ID" }), "Kuna, Idaho");
   assert.equal(spokenLocation({ city: null, county: "Humboldt", state: "CA" }), "Humboldt County, California");
   const v = callVariables(contact());
